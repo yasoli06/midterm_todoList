@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/userStore'
-import { supabaseClient } from '../composables/useSupabase';
+import { supabase } from '../supabase';
 
 const isOpen = ref(false);
 const router = useRouter();
@@ -16,7 +16,7 @@ const toggleMenu = () => {
 
 const logout = async () => {
     try {
-    const { error } = await supabaseClient.auth.signOut();
+    const { error } = await supabase.auth.signOut();
     if (error) throw error;
 
     userStore.logout();
@@ -29,7 +29,7 @@ const logout = async () => {
 onMounted(async () => {
   // Check for logged-in user from Supabase or store
   try {
-    const { data: { session }, error } = await supabaseClient.auth.getSession();
+    const { data: { session }, error } = await supabase.auth.getSession();
     if (error) throw error;
 
     if (session) {

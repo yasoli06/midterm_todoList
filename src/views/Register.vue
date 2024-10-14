@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { supabaseClient } from '../composables/useSupabase';
+import { supabase } from '../supabase.js';
 
 const name = ref('');
 const email = ref('');
@@ -14,16 +14,11 @@ const register = async () => {
   error.value = '';
   if (name.value && email.value && password.value) {
     try {
-      const { data, error } = await supabaseClient.auth.signUp({
+      const {  data, error } = await supabase.auth.signUp({
         email: email.value,
-        password: password.value,
-        options: {
-          data: {
-            name: name.value,
-          },
-        },
+        password: password.value
       });
-
+      console.log(email.value, password.value);
       if (error) throw error;
 
       // Acceder al usuario creado en la respuesta
@@ -33,14 +28,17 @@ const register = async () => {
         if (!user.confirmed_at) {
           error.value = 'Se ha enviado un correo electrónico de verificación. Por favor, verifica tu correo electrónico para activar tu cuenta.';
         } else {
-          // Si el correo ya ha sido confirmado, redirigir al dashboard
-          router.push({ name: 'dashboard' });
+          router.push({ name: 'homeuser' });
         }
       }
       resetFields();
     } catch (err) {
       console.error('Error al registrarse:', err);
-      error.value = err.message;
+      if (err.message.includes('Email address')) {
+        error.value = 'El correo electrónico no está autorizado. Verifica tu dominio de correo o usa otro email.';
+      } else {
+        error.value = 'Hubo un problema al registrarse. Intenta nuevamente más tarde.';
+      }
     }
   } else {
     error.value = 'Todos los campos son obligatorios.';
@@ -64,13 +62,13 @@ const resetFields = () => {
             <div class="field">
               <label class="label">Nombre</label>
               <div class="control">
-                <input class="input" type="text" v-model="name" placeholder="e.g. Alex Smith" />
+                <input class="input" type="text" v-model="name" />
               </div>
             </div>
             <div class="field">
               <label class="label">Correo electrónico</label>
               <div class="control">
-                <input class="input" type="email" v-model="email" placeholder="e.g. alexsmith@gmail.com" />
+                <input class="input" type="email" v-model="email" />
               </div>
             </div>
             <div class="field">
