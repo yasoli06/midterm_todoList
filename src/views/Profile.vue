@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useUserStore } from '@/stores/userStore';
-import { supabaseClient } from '@/composables/useSupabase';
+import { supabase } from '../supabase';
 import { useRouter } from 'vue-router';
 
 const userStore = useUserStore();
@@ -30,7 +30,7 @@ const uploadAvatar = async (event) => {
   if (file) {
     try {
       // Subir imagen de avatar a Supabase Storage
-      const { data, error } = await supabaseClient.storage
+      const { data, error } = await supabase.storage
         .from('avatars')
         .upload(`public/${user.value.id}.jpg`, file, {
           cacheControl: '3600',
@@ -42,7 +42,7 @@ const uploadAvatar = async (event) => {
       }
 
       // Obtener la URL de la imagen cargada
-      const { publicURL, error: urlError } = supabaseClient.storage
+      const { publicURL, error: urlError } = supabase.storage
         .from('avatars')
         .getPublicUrl(`public/${user.value.id}.jpg`);
 
@@ -54,7 +54,7 @@ const uploadAvatar = async (event) => {
       avatarUrl.value = publicURL;
 
       // Guardar el avatar en el perfil del usuario en la base de datos
-      const { error: updateError } = await supabaseClient
+      const { error: updateError } = await supabase
         .from('users')
         .update({ avatar_url: publicURL })
         .eq('id', user.value.id);

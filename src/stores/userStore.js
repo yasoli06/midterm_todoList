@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { supabaseClient } from '../composables/useSupabase';
+import { supabase } from '../supabase';
 
 export const useUserStore = defineStore('user', {
     state: () => ({
@@ -15,7 +15,7 @@ export const useUserStore = defineStore('user', {
       async fetchUser() {
         this.loading = true;
         try {
-          const { data: { user }, error } = await supabaseClient.auth.session(); // Get user session
+          const { data: { user }, error } = await supabase.auth.session(); // Get user session
           if (error) throw error;
   
           this.user = user;
@@ -31,7 +31,7 @@ export const useUserStore = defineStore('user', {
       },
       async logout() {
         try {
-          const { error } = await supabaseClient.auth.signOut();
+          const { error } = await supabase.auth.signOut();
           if (error) throw error;
   
           this.user = null;
@@ -43,7 +43,7 @@ export const useUserStore = defineStore('user', {
       },
       async loadWishlist(userId) {
         try {
-          const { data: wishlist, error } = await supabaseClient
+          const { data: wishlist, error } = await supabase
             .from('wishlist')
             .select('*')
             .eq('user_id', userId)
@@ -61,7 +61,7 @@ export const useUserStore = defineStore('user', {
           const userId = this.user?.id; // Ensure user exists
           if (!userId) return; // Exit if no user
   
-          const { error } = await supabaseClient
+          const { error } = await supabase
             .from('wishlist')
             .upsert({ // Upsert combines insert and update
               user_id: userId,

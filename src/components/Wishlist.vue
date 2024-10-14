@@ -1,10 +1,9 @@
 <script setup>
 import { ref } from 'vue';
 import { useUserStore } from '../stores/userStore';
-import { supabaseClient } from '../composables/useSupabase';
+import { supabase } from '../supabase';
 
 const userStore = useUserStore();
-const supabase = supabaseClient;
 
 const newCountry = ref('');
 
