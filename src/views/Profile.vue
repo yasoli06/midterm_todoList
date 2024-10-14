@@ -11,13 +11,12 @@ const router = useRouter();
 const avatarUrl = ref('');
 
 // Ref para almacenar los datos del usuario
-const user = ref({});
+const user = ref(null);
 
 // Obtener los datos del usuario cuando se monta el componente
 onMounted(() => {
-  user.value = userStore.user;
-  if (user.value) {
-    // Si el usuario tiene una imagen de avatar cargada, mostrarla
+   if (user.value) {
+    user.value = userStore.user;
     if (user.value.avatar_url) {
       avatarUrl.value = user.value.avatar_url;
     }

@@ -31,7 +31,7 @@ const login = async () => {
 
         // Verificar si el usuario tiene una cuenta (deberías ajustar esto a tu lógica)
         if (user) {
-          // Si es un usuario registrado, redirigir a la página profile
+          userStore.setUser(user);
           router.push({ name: 'profile' })
         } else {
           // Si no hay usuario (error en la sesión), redirigir a la página de registro

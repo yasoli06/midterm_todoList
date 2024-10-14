@@ -15,11 +15,13 @@ export const useUserStore = defineStore('user', {
       async fetchUser() {
         this.loading = true;
         try {
-          const { data: { user }, error } = await supabase.auth.session(); // Get user session
+          const { data: { user }, error } = await supabase.auth.getSession();
           if (error) throw error;
-  
+      
+          console.log('User fetched:', user);  // Verifica que el usuario esté correctamente cargado
           this.user = user;
           this.isAuthenticated = !!user;
+      
           if (user) {
             await this.loadWishlist(user.id);
           }
@@ -47,13 +49,13 @@ export const useUserStore = defineStore('user', {
             .from('wishlist')
             .select('*')
             .eq('user_id', userId)
-            .single(); // Fetch wishlist for user
+            //.single(); // Fetch wishlist for user
   
           if (error) throw error;
   
           this.wishlist = wishlist || [];
         } catch (error) {
-          console.error('Error loading wishlist:', error);
+          //console.error('Error loading wishlist:', error);
         }
       },
       async saveWishlist() {
@@ -73,15 +75,31 @@ export const useUserStore = defineStore('user', {
           console.error('Error saving wishlist:', error);
         }
       },
-      addCountry(countryName) {
-        const newCountry = {
-          id: Date.now(),
-          name: countryName,
-          visited: false,
-        };
+      async addCountry(countryName) {
+        const exists = this.wishlist.some(country => country.name === countryName);
+        if (!exists) {
+          const newCountry = {
+            name: countryName,
+            visited: false,
+            user_id: this.user.id, // Asegúrate de que el país esté asociado al usuario
+          };
+
+          const { data, error } = await supabase
+          .from('wishlist')
+          .insert(newCountry); 
+
+        if (error) {
+          console.error('Error inserting country into database:', error);
+          return;
+        }
         this.wishlist.push(newCountry);
-        this.saveWishlist();
-      },
+       // this.saveCountryToDatabase(newCountry); // Guarda en la base de datos
+        //this.loadWishlist(this.user.id);
+      } else {
+        console.log('El país ya está en la wishlist.');
+      }
+    },
+
       toggleVisited(id) {
         const countryIndex = this.wishlist.findIndex((country) => country.id === id);
         if (countryIndex !== -1) {
@@ -89,13 +107,19 @@ export const useUserStore = defineStore('user', {
           this.saveWishlist();
         }
       },
-      removeCountry(id) {
+      async removeCountry(id) {
+        const beforeLength = this.wishlist.length;
         this.wishlist = this.wishlist.filter((country) => country.id !== id);
+
+        if (beforeLength !== this.wishlist.length) {
         this.saveWishlist();
+        } else {
+        console.log('El país no estaba en la wishlist.');
+      }
       },
       setUser(newUser) {
         this.user = newUser;
         this.isAuthenticated = !!newUser; // Marca el estado de autenticación
-      },
+      },   
     },
   });
