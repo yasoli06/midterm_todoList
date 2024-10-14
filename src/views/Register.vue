@@ -28,7 +28,7 @@ const register = async () => {
         if (!user.confirmed_at) {
           error.value = 'Se ha enviado un correo electrónico de verificación. Por favor, verifica tu correo electrónico para activar tu cuenta.';
         } else {
-          router.push({ name: 'homeuser' });
+          router.push({ name: 'profile' });
         }
       }
       resetFields();
