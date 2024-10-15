@@ -61,7 +61,8 @@ onMounted(async () => {
  
    <div id="navbarBasicExample" class="navbar-menu" :class="{'is-active': isOpen}">
      <div class="navbar-start">
-       <router-link class="nav-bar-item has-text-white" to="/" style="margin-top: 40px;">Home</router-link>
+      <router-link class="nav-bar-item has-text-white" to="/" style="margin-top: 40px; margin-right: 20px;">Home</router-link>
+      <router-link class="nav-bar-item has-text-white" to="/profile" style="margin-top: 40px;">Profile</router-link>
    </div>
  
      <div class="navbar-end">

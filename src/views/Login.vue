@@ -7,45 +7,62 @@ import { useUserStore } from '@/stores/userStore'
 const email = ref('')
 const password = ref('')
 const error = ref('')
+const loading = ref(false)
 
 const router = useRouter()
 const userStore = useUserStore()
 
+// Validar formato de email
+const isValidEmail = (email) => /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(email)
+
+// Función para manejar el login
 const login = async () => {
   error.value = ''
-  if (email.value && password.value) {
-    try {
-      const {
-        data: { user },
-        error: loginError,
-      } = await supabase.auth.signInWithPassword({
-        email: email.value,
-        password: password.value,
-      })
-
-      if (loginError) throw loginError
-
-      if (user) {
-        // Actualizar el estado del usuario en la store
-        userStore.setUser(user)
-
-        // Verificar si el usuario tiene una cuenta (deberías ajustar esto a tu lógica)
-        if (user) {
-          userStore.setUser(user);
-          router.push({ name: 'profile' })
-        } else {
-          // Si no hay usuario (error en la sesión), redirigir a la página de registro
-          router.push({ name: 'register' })
-        }
-      }
-    } catch (err) {
-      console.error('Error al iniciar sesión:', err)
-      error.value = err.message
-    }
-  } else {
+  if (!email.value || !password.value) {
     error.value = 'Todos los campos son obligatorios.'
+    return
+  }
+
+  if (!isValidEmail(email.value)) {
+    error.value = 'El correo electrónico no tiene un formato válido.'
+    return
+  }
+  loading.value = true
+
+  try {
+    const { data: { session, user }, error: loginError } = await supabase.auth.signInWithPassword({
+      email: email.value,
+      password: password.value,
+    })
+
+    if (loginError) throw loginError
+
+    // Actualizar el estado del usuario en la store
+    userStore.setUser(user)
+
+    // Redirigir a la ruta adecuada si el login fue exitoso
+    redirectUser(user)
+    const jwt = session.access_token
+      localStorage.setItem('jwt', jwt)
+
+  } catch (err) {
+    console.error('Error al iniciar sesión:', err)
+    error.value = 'Hubo un problema al iniciar sesión. Intenta nuevamente.'
+  } finally {
+    // Desactivar el estado de carga
+    loading.value = false
   }
 }
+
+// Función para redirigir al usuario después de iniciar sesión
+const redirectUser = () => {
+  if (!userStore.isAuthenticated) {
+    router.push({ name: 'login' });  // Redirigir al login solo si no está autenticado
+  } else {
+    router.push({ name: 'profile' });  // Redirigir al perfil si está autenticado
+  }
+}
+
 </script>
 
 <template>

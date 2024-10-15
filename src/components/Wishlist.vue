@@ -1,158 +1,168 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useUserStore } from '../stores/userStore';
-import { supabase } from '../supabase';
+import { ref, onMounted } from 'vue'
+import { useUserStore } from '../stores/userStore'
+import { supabase } from '../supabase'
 
-const userStore = useUserStore();
+const userStore = useUserStore()
 
-const newCountry = ref('');
+const newCountry = ref('')
 
 // Función para validar UUID
-function isUUID(id) {
-  const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return regex.test(id);
-}
-// Función para obtener los países del usuario desde la base de datos
-const fetchCountries = async () => {
-  if (!userStore.user?.id || !isUUID(userStore.user.id)) {
-    console.error("Invalid user ID or user not authenticated");
-    return;
-  }
+const isUUID = id =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
-  const { data, error } = await supabase
-    .from('wishlist')
-    .select('id, name, visited')
-    .eq('user_id', userStore.user.id); // Obtiene los países del usuario autenticado
-
-  if (error) {
-    console.error("Error fetching countries:", error);
-  } else {
-    console.log("Countries fetched:", data);
-    userStore.loadWishlist(data); // Guardar los países en el store
-  }
-};
-
-const addCountryToWishlist = async () => {
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+// Verificar si el usuario está autenticado y retornar su perfil
+const getUserProfile = async () => {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession()
 
   if (sessionError || !session) {
-    console.error("Error fetching session or user not authenticated:", sessionError);
-    return;
+    console.error(
+      'Error fetching session or user not authenticated:',
+      sessionError,
+    )
+    return null
   }
 
-  const user = session.user;
-  console.log("User ID:", user.id);
+  const user = session.user
   if (!user.id || !isUUID(user.id)) {
-    console.error("Invalid User ID:", user.id);
-    return;
+    console.error('Invalid User ID:', user.id)
+    return null
   }
 
-  // Verificar si el usuario ya existe en la tabla 'profiles'
-  const { data: profileExists, error: profileError } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', user.id)
-    .single();
-
-  // Si el perfil no existe, crear uno nuevo en la tabla 'profiles'
-  if (profileError || !profileExists) {
-    const { data: newProfile, error: insertProfileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: user.id, // El ID del usuario que viene de auth.users
-        name: user.user_metadata?.name || user.email, // Usar el nombre del metadata, o el email como fallback
-        avatar_url: user.user_metadata?.avatar_url || '', // URL del avatar si está disponible
-      })
-      .single();
-
-    if (insertProfileError) {
-      console.error("Error inserting profile in 'profiles' table:", insertProfileError);
-      return;
-    }
-    console.log("Profile created successfully:", newProfile);
-  } else {
-    console.log("Profile already exists in 'profiles' table.");
-  }
-  console.log("Data being sent to wishlist:", {
-  name: newCountry.value,
-  user_id: user.id
-});
-  // Insertar el país en la wishlist si el nombre no está vacío
-  if (newCountry.value.trim() !== '') {
-  try {
-    // Verifica si user.id es válido antes de hacer la inserción
-    if (!user.id || !isUUID(user.id)) {
-      throw new Error("Invalid User ID");
-    }
-
-    const { data, error } = await supabase
-      .from('wishlist')
-      .insert({ 
-        name: newCountry.value,  // Nombre del país
-        user_id: user.id  // El ID del usuario (debe ser un UUID válido)
-      });
-
-    if (error) {
-      throw error;
-    }
-
-    if (data && data.length > 0) {
-        console.log("Country inserted:", data);
-        userStore.addCountry(data[0]); // Actualiza el estado del store con el nuevo país
-        newCountry.value = ''; // Limpiar el campo después de agregar
-      } else {
-        console.error("No data returned from insert.");
-      }
-  } catch (err) {
-    console.error('Error adding country:', err);
-  }
-} else {
-  console.log("Country name is empty.");
+  return user
 }
-};
 
-const toggleVisitedStatus = async (id) => {
+// Función para cargar los países de la wishlist del usuario
+const fetchCountries = async () => {
+  const user = await getUserProfile()
+  if (!user) return
+  await userStore.loadWishlist(user.id)
+}
+onMounted(() => {
+  fetchCountries()
+})
+
+// Verificar si el perfil del usuario existe, y si no, crear uno
+// const ensureUserProfile = async user => {
+//   const { data: profileExists, error: profileError } = await supabase
+//     .from('profiles')
+//     .select('id')
+//     .eq('id', user.id)
+//     .single()
+
+//   if (profileError) {
+//     console.error('Error checking user profile:', profileError)
+//     return false
+//   }
+
+//   if (!profileExists) {
+//     // Crear el perfil solo si no existe
+//     const { data: newProfile, error: insertProfileError } = await supabase
+//       .from('profiles')
+//       .insert({
+//         id: user.id,
+//         name: user.user_metadata?.name || user.email,
+//         avatar_url: user.user_metadata?.avatar_url || '',
+//       })
+//       .single()
+
+//     if (insertProfileError) {
+//       console.error('Error inserting profile:', insertProfileError)
+//       return false
+//     }
+//     console.log('Profile created successfully:', newProfile)
+//   } else {
+//     console.log('Profile already exists.')
+//   }
+
+//   return true
+// }
+
+// Función para añadir país a la wishlist
+const addCountryToWishlist = async () => {
+  const user = await getUserProfile()
+  if (!user) return
+
+  if (newCountry.value.trim() === '') {
+    console.log('Country name is empty.')
+    return
+  }
   try {
-    const country = userStore.getCountryById(id); // Obtén el país desde la store
-    if (!country) {
-      throw new Error('Country not found');
-    }
+    // const profileCreated = await ensureUserProfile(user)
+    // if (!profileCreated) return
 
-    // Actualiza el estado en la base de datos
     const { data, error } = await supabase
       .from('wishlist')
-      .update({ visited: !country.visited }) // Actualiza el campo 'visited'
-      .eq('id', id)
-      .select();
+      .insert({
+        name: newCountry.value,
+        user_id: user.id,
+      })
+      .select('*')
 
-    if (error) throw error;
-
-    userStore.toggleVisited(id); // Actualiza localmente en el store
+    if (error) throw error
+    if (data && data.length > 0) {
+      console.log('Country inserted:', data)
+      userStore.addCountry(data[0])
+      newCountry.value = '' // Limpiar el campo después de agregar
+      fetchCountries() // Recargar la wishlist
+    }
   } catch (err) {
-    console.error('Error al actualizar el estado del país:', err);
+    console.error('Error adding country:', err)
   }
-};
+}
+
+// Activar el modo de edición para un país
+const editCountry = country => {
+  country.isEditing = true
+  country.newName = country.name // Mantener el valor original mientras se edita
+}
+
+// Guardar el nombre editado en la base de datos
+const saveEdit = async country => {
+  if (country.newName.trim() === '') {
+    console.log('Country name cannot be empty.')
+    return
+  }
+
+  try {
+    // Guardar el nuevo nombre en la base de datos
+    await userStore.editCountry(country.id, country.newName)
+
+    // Después de la actualización, recargar la wishlist para reflejar el cambio
+    await fetchCountries()
+
+    // Desactivar el modo de edición
+    country.isEditing = false
+  } catch (error) {
+    console.error('Error saving edited country:', error)
+  }
+}
+
+// Cambiar el estado de "visited" a "not visited"
+const toggleVisitedStatus = async id => {
+  try {
+    await userStore.toggleVisited(id)
+  } catch (error) {
+    console.error('Error al actualizar el estado de visitado:', error)
+  }
+}
 
 // Eliminar país de la lista de deseos
-const removeCountryFromWishlist = async (id) => {
+const removeCountryFromWishlist = async id => {
   try {
-    const { data, error } = await supabase
-      .from('wishlist')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-
-    userStore.removeCountry(id); // Elimina el país de la store localmente
-  } catch (err) {
-    console.error('Error al eliminar el país:', err);
+    await userStore.removeCountry(id)
+  } catch (error) {
+    console.error('Error al eliminar el país:', error)
   }
-};
+}
 
 // Se llama a `fetchCountries` cuando el componente se monta
 onMounted(() => {
-  fetchCountries();
-});
+  fetchCountries()
+})
 </script>
 
 <template>
@@ -171,54 +181,80 @@ onMounted(() => {
         />
       </div>
       <div class="control">
-        <button @click="addCountryToWishlist" class="button is-primary">Add</button>
+        <button @click="addCountryToWishlist" class="button is-primary">
+          Add
+        </button>
       </div>
     </div>
 
     <!-- Lista de países -->
     <div class="countries">
-      <div v-for="country in userStore.wishlist" :key="country.id" class="box country-item">
-        
-        <!-- Edición del nombre del país
-        <span v-if="!country.isEditing" class="country-name">{{ country.name }}</span>
-        <input
-          v-if="country.isEditing"
-          v-model="country.editName"
-          @blur="saveCountryEdit(country.id)"
-          class="input"
-          type="text"
-          placeholder="Edit country name"
-        /> -->
+      <div
+        v-for="country in userStore.wishlist"
+        :key="country.id"
+        class="box country-item"
+      >
+        <!-- Mostrar el nombre del país -->
+        <div class="country-name">
+          <p v-if="!country.isEditing">{{ country.name }}</p>
+          <input v-else v-model="country.newName" class="input" type="text" />
+        </div>
 
-        <!-- Botones para editar el nombre -->
-        <!-- <button @click="editCountryName(country)" class="button is-light is-small">
-          <span class="icon">
-            <i class="fas fa-pencil-alt"></i>
-          </span>
-          Edit
-        </button> -->
-
-        <!-- Botones para estado de visitado/no visitado -->
-        <div class="status-buttons buttons">
+        <!-- Botones de estado de visitado/no visitado -->
+        <div class="status-buttons buttons is-centered">
           <button
             @click="toggleVisitedStatus(country.id)"
-            :class="['button', { 'is-success': country.visited, 'is-light': !country.visited }]"
+            :class="[
+              'button',
+              { 'is-success': country.visited, 'is-light': !country.visited },
+            ]"
           >
             Visited
           </button>
           <button
             @click="toggleVisitedStatus(country.id)"
-            :class="['button', { 'is-danger': !country.visited, 'is-light': country.visited }]"
+            :class="[
+              'button',
+              { 'is-danger': !country.visited, 'is-light': country.visited },
+            ]"
           >
             Not Visited
           </button>
 
-          <!-- Botón de eliminar país -->
-          <button @click="removeCountryFromWishlist(country.id)" class="button is-light">
-            <span class="icon">
-              <i class="fas fa-trash"></i>
-            </span>
-          </button>
+          <!-- Botones de eliminar y editar (alineados) -->
+          <div class="buttons is-right">
+            <!-- Botón de editar -->
+            <button
+              v-if="!country.isEditing"
+              @click="editCountry(country)"
+              class="button is-info is-small"
+            >
+              <span class="icon">
+                <i class="fas fa-pencil-alt edit-icon"></i>
+              </span>
+            </button>
+
+            <!-- Botón para guardar cambios -->
+            <button
+              v-if="country.isEditing"
+              @click="saveEdit(country)"
+              class="button is-success is-small"
+            >
+              <span class="icon">
+                <i class="fas fa-save"></i>
+              </span>
+            </button>
+
+            <!-- Botón de eliminar -->
+            <button
+              @click="removeCountryFromWishlist(country.id)"
+              class="button is-danger is-small"
+            >
+              <span class="icon">
+                <i class="fas fa-trash-alt delete-icon"></i>
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -267,5 +303,26 @@ onMounted(() => {
 .status-buttons .button {
   min-width: 100px;
   text-align: center;
+}
+
+.status-buttons .button.is-light {
+  background-color: #666;
+}
+
+.buttons.is-right {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.is-small {
+  font-size: 0.7em; /* Botón más pequeño */
+  padding: 0.3em 0.5em; /* Ajustar el tamaño del padding */
+}
+
+.icon {
+  display: inline-block;
+  width: 16px; /* Ajustar el tamaño de los iconos */
+  height: 16px;
 }
 </style>

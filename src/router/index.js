@@ -1,10 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useUserStore } from '../stores/userStore';
 import Home from '../views/Home.vue';
 import Profile from '../views/Profile.vue';
 import Wishlist from '../components/Wishlist.vue';
 import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
+import '@fortawesome/fontawesome-free/css/all.css';
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -36,17 +37,15 @@ const router = createRouter({
     path: '/profile',
     name: 'profile',
     component: Profile,
-    meta: { requiresAuth: true } // Agrega meta para rutas protegidas
+    meta: { requiresAuth: true } 
   },
   ],
 })
 
 
 router.beforeEach((to, from, next) => {
-  const userStore = useUserStore(); // Access the userStore
   if (to.matched.some(record => record.meta.requiresAuth)) {
-    // This route requires auth, check if user is logged in
-    if (!userStore.isAuthenticated) {
+    if (!localStorage.getItem('jwt')) {
       next({
         name: 'login'
       })
@@ -54,7 +53,7 @@ router.beforeEach((to, from, next) => {
       next()
     }
   } else {
-    next() // make sure to always call next()!
+    next()
   }
 })
 
