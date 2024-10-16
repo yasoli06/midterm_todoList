@@ -46,13 +46,18 @@ Clone this repository and navigate to the project directory:
 ```sh
 git clone https://github.com/yourusername/your-repository.git
 cd your-repository
+```
 
 Install the project dependencies:
+```sh
 npm install
+```
 
 Compile and Run for Development
 To start the development server, run:
+```sh
 npm run dev
+```
 This will open the app at http://localhost:3000 in your browser.
 
 
@@ -72,36 +77,4 @@ If you'd like to contribute to this project, please follow these steps:
 4. Push your branch (`git push origin feature-new-feature`).
 5. Open a **Pull Request**.
 
-This template should help get you started developing with Vue 3 in Vite.
 
-## Recommended IDE Setup
-
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
