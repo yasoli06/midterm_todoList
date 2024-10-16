@@ -46,13 +46,18 @@ Clone this repository and navigate to the project directory:
 ```sh
 git clone https://github.com/yourusername/your-repository.git
 cd your-repository
+```
 
 Install the project dependencies:
+```sh
 npm install
+```
 
 Compile and Run for Development
 To start the development server, run:
+```sh
 npm run dev
+```
 This will open the app at http://localhost:3000 in your browser.
 
 
