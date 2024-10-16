@@ -57,7 +57,7 @@ onMounted(() => {
     <div class="profile-header has-text-centered">
       <div class="profile-avatar">
         <!-- Mostrar la imagen de avatar desde la carpeta assets -->
-        <img :src="userStore.user?.avatar_url || defaultAvatar" alt="User Avatar" class="avatar-img" />
+        <img src="../assets/mochilero.png" alt="User Avatar" class="avatar-img" />
       </div>
       <h1 class="title is-3">Explorer: <span class="has-text-weight-bold">{{ userStore.user?.name }}</span></h1>
     </div>
